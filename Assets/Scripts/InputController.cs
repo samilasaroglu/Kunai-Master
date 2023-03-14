@@ -3,39 +3,85 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class InputController : MonoBehaviour ,IPointerClickHandler ,IDragHandler,IPointerDownHandler,IPointerUpHandler
+public class InputController : MonoBehaviour ,IPointerClickHandler ,IDragHandler,IPointerDownHandler,IPointerUpHandler,IDropHandler
 {
+    public static InputController instance; 
+
 
     Vector2 _firstClickPos, _lastClickPos;
+
+    private void Awake()
+    {
+        if (instance == null)
+        {
+            instance = this;
+        }
+    }
 
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        _firstClickPos = eventData.position;
-        PlayerController.instance._arrow.SetActive(true);
-        // Arrowu aktif yap ve parmağın başlandıç pozisyonunu al
+
+        if (GameManager.instance.GameStart)
+        {
+            PlayerController.instance.ResetArrowSize();
+            PlayerController.instance.ResetArrowDirection();
+
+            _firstClickPos = eventData.position;
+            PlayerController.instance._arrow.SetActive(true);
+
+            if (PlayerController.instance.IsKnifeThrow)
+            {
+                SlowMotion.instance.StartSlowMotion();
+
+                EventManager.Broadcast(GameEvent.OnSlowMotion);
+            }
+        }
+
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        PlayerController.instance.GetDirection();
-        PlayerController.instance.ResetArrowSize();
-        PlayerController.instance._arrow.SetActive(false);
-        PlayerController.instance.ResetArrowDirection();
+
+        if (GameManager.instance.GameStart)
+        {
+            PlayerController.instance._arrow.SetActive(false);
+
+            if (PlayerController.instance.IsKnifeThrow)
+            {
+                SlowMotion.instance.FinishSlowMotion();
+                PlayerController.instance.IsKnifeThrow = false;
+            }
+        }
+
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-
+        if (!GameManager.instance.GameStart)
+        {
+            GameManager.instance.StartTheGame();
+            Debug.Log("Oyun Başladı");
+        }
     }
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (GameManager.instance.GameStart)
+        {
+            _lastClickPos = eventData.position;
+            PlayerController.instance.SetArrowAngle(_firstClickPos, _lastClickPos);
+        }
 
-        _lastClickPos = eventData.position;
-        PlayerController.instance.SetArrowAngle(_firstClickPos, _lastClickPos);
-        // Parmağın pozisyonunu al sürekli ve parmağın ilk pozisyona göre okun yönünü belirle.
-        // Okun scaleY'sini deltaya göre ayarla
+    }
+
+    public void OnDrop(PointerEventData eventData)
+    {
+        if (GameManager.instance.GameStart)
+        {
+            PlayerController.instance.ThrowKnife();
+
+        }
     }
 
 }

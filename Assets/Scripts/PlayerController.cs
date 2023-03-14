@@ -6,8 +6,11 @@ public class PlayerController : MonoBehaviour
 {
     public static PlayerController instance;
     public GameObject _arrow;
+    public bool IsKnifeThrow;
 
-    [SerializeField] GameObject _arrowAnchor;
+    [SerializeField] GameData _gameData;
+    [SerializeField] GameObject _arrowAnchor,_knife;
+    [SerializeField] Rigidbody _knifeRb;
     [SerializeField] float _value;
 
     private void Awake()
@@ -19,6 +22,30 @@ public class PlayerController : MonoBehaviour
 
         _arrow = _arrowAnchor.transform.GetChild(0).gameObject;
 
+    }
+
+    private void OnEnable()
+    {
+        EventManager.AddHandler(GameEvent.OnSlowMotion, OnSlowMotion);
+    }
+
+    private void OnDisable()
+    {
+        EventManager.RemoveHandler(GameEvent.OnSlowMotion, OnSlowMotion);
+    }
+
+
+    public void ThrowKnife()
+    {
+        _knife.transform.position = _arrowAnchor.transform.position;
+        _knife.transform.rotation = _arrow.transform.rotation;
+
+        _knifeRb.velocity = Vector3.zero;
+        _knifeRb.angularVelocity = Vector3.zero;
+
+        _knifeRb.AddForce(_knife.transform.up * _gameData.ThrowForceValue, ForceMode.Impulse);
+
+        IsKnifeThrow = true;
     }
 
     public void SetArrowAngle(Vector2 firstPos,Vector2 lastPos)
@@ -41,9 +68,9 @@ public class PlayerController : MonoBehaviour
         _arrow.transform.localScale = new Vector3(.4f, .4f, 1);
     }
 
-    public void GetDirection()
+    public void SetPlayerPosition()
     {
-        Debug.Log(_arrow.transform.rotation);
+        transform.position = _knife.transform.position;
     }
 
     void SetArrowSize(float dist)
@@ -64,9 +91,9 @@ public class PlayerController : MonoBehaviour
 
     }
 
-    void ThrowKnife()
+    void OnSlowMotion()
     {
-
+        SetPlayerPosition();
     }
 
 }
